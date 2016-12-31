@@ -1,10 +1,8 @@
-LinkSlots v1.1.0 for ImagicalMine
+LinkSlots v2.0.0
 ===================================
 - All plugin rights reserved © kvetinac97 2016
-- All MinecraftQuery rights reserved © xPaw 2015, edited by kvetinac97
 
-Link Slots of all your servers - just write IP:port into config!
+Link Slots of all your servers - just write port:IP into config!
 Supports unlimited server count!
 
-MinecraftQuery part is located at https://www.minetox.cz/queryapi/,
-so the whole plugin copyright is by © kvetinac97
+This fork has been modified to run self-contained. It no longer needs the xpaw web server needed by the previous version.
