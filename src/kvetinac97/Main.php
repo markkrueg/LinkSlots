@@ -41,12 +41,38 @@ class Main extends PluginBase implements Listener {
             $this->getLogger()->warning("§cDisabling §bLinkSlots...");
             $this->getServer()->getPluginManager()->disablePlugin($this);
         }
-        foreach ($this->config->get("servers") as $ip => $port){
-            /** @var int $onl */
-            $onl = file_get_contents("https://www.minetox.cz/queryapi/online.php?ip=$ip&port=$port");
-            /** @var int $max */
-            $max = file_get_contents("https://www.minetox.cz/queryapi/maxonline.php?ip=$ip&port=$port");
-            if ($onl == -1 || $max == -1){
+
+        foreach ($this->config->get("servers") as $port => $ip){
+
+			#The following code was taken from DServerTask.php at Genisys project https://github.com/iTXTech/Genisys
+			#Author MUedsa, PeratX
+			#Licensed GNU GPL v3 as posted https://github.com/iTXTech/Genisys/blob/master/LICENSE
+			$client = stream_socket_client("udp://" . $ip . ":" . $port, $errno, $errstr);    //非阻塞Socket
+			if($client){
+				stream_set_timeout($client, 1);
+				$Handshake_to = "\xFE\xFD" . chr(9) . pack("N", 233);
+				fwrite($client, $Handshake_to);
+				$Handshake_re_1 = fread($client, 65535);
+				if($Handshake_re_1 != ""){
+					$Handshake_re = $this->decode($Handshake_re_1);
+					$Status_to = "\xFE\xFD" . chr(0) . pack("N", 233) . pack("N", $Handshake_re["payload"]);
+					fwrite($client, $Status_to);
+					$Status_re_1 = fread($client, 65535);
+					if($Status_re_1 != ""){
+						$Status_re = $this->decode($Status_re_1);
+						$ServerData = explode("\x00", $Status_re["payload"]);
+						$onl = $ServerData[3];
+						$max = $ServerData[4];
+					}
+				}
+			fclose($client);
+			#END Genisys DServerTask.php code https://github.com/iTXTech/Genisys
+		}
+			
+			#Debug code. Un-comment to show each server connection and results.
+			#$this->getLogger()->info("Server Checked ".$ip.":".$port." Online: ".$onl." Max: ".$max);
+
+            if ($onl == null || $max == null){
                 if (!$task){
                     $this->getLogger()->warning("§cCould not connect to §e$ip:§b$port; §cThe server is offline");
                 }
@@ -59,14 +85,24 @@ class Main extends PluginBase implements Listener {
             $this->players += \count($this->getServer()->getOnlinePlayers());
             $this->maxPlayers += $this->getServer()->getMaxPlayers();
         }
-    }
-
+	}
+	
     public function onQuery(QueryRegenerateEvent $e){
         $e->setPlayerCount($this->players);
         $e->setMaxPlayerCount($this->maxPlayers);
     }
 
-
+	#The following code was taken from DServerTask.php at Genisys project https://github.com/iTXTech/Genisys
+	#Author MUedsa, PeratX
+	#Licensed GNU GPL v3 as posted https://github.com/iTXTech/Genisys/blob/master/LICENSE
+    public function decode($buffer){
+		$redata = [];
+		$redata["packetType"] = ord($buffer{0});
+		$redata["sessionID"] = unpack("N", substr($buffer, 1, 4))[1];
+		$redata["payload"] = rtrim(substr($buffer, 5));
+		return $redata;
+	}
+	#END Genisys DServerTask.php code https://github.com/iTXTech/Genisys
 
 }
 
