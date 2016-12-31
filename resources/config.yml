@@ -9,7 +9,7 @@ add_self_slots: true
 
 #Write your server IPs and ports like this:
 
-# server.myip.com: 19132
+# 19132: server.myip.com
 #WARNING!!! If you write IP like this:
 #19132:server.myip.com, plugin won't crash, but it won't change slots
 
